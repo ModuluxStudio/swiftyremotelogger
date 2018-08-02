@@ -58,7 +58,7 @@ public class RemoteLogger {
         return logFormat
     }
     
-    private func formatBody(_ message: String) -> Data? {
+    private func formatBody(_ message: String, type: LogLevel) -> Data? {
         let json: [String: Any] = [
             "deviceIdentifier": device.identifier,
             "deviceModel": device.model,
@@ -66,6 +66,7 @@ public class RemoteLogger {
             "deviceName": device.deviceName,
             "deviceSystem": device.deviceSystem,
             "deviceSystemVersion": device.deviceSystemVersion,
+            "type": type.rawValue,
             "message": message
         ]
         
@@ -80,10 +81,10 @@ public class RemoteLogger {
     
     public func log(type: LogLevel, message: String) {
         let logMessage = formatMessage(type, message: message)
-        remoteLog(message: logMessage)
+        remoteLog(message: logMessage, logType: type)
     }
     
-    private func remoteLog(message: String) {
+    private func remoteLog(message: String, logType: LogLevel) {
         guard let url = URL(string: baseUrl) else {
             internalLog(.error, "[❌❌❌] - The BaseUrl is not a valid url")
             return
@@ -91,7 +92,7 @@ public class RemoteLogger {
         
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.httpBody = formatBody(message)
+        request.httpBody = formatBody(message, type: logType)
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         let task = URLSession.shared.dataTask(with: request) { [weak self] (data, response, error) in
             if let data = data, let dataString = String(data: data, encoding: String.Encoding.utf8) {
